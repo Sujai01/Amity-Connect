@@ -217,7 +217,7 @@ export default function SearchScreen() {
 // ... (Keep your existing styles.create exactly as you have it)
 const styles = StyleSheet.create({
     innerContainer: { flex: 1, paddingHorizontal: 20 },
-    headerTitle: { color: "white", fontSize: 32, fontWeight: "bold", marginTop: 40, marginBottom: 20 },
+    headerTitle: { color: "white", fontSize: 32, fontWeight: "bold", marginTop: 60, marginBottom: 20 },
     searchBar: { flexDirection: "row", alignItems: "center", backgroundColor: THEME.card, borderRadius: 15, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: "#1E293B", marginBottom: 16 },
     searchInput: { flex: 1, color: "#FFF", fontSize: 15, marginLeft: 10 },
     categoryChip: { flexDirection: "row", alignItems: "center", backgroundColor: THEME.card, borderRadius: 25, paddingHorizontal: 16, paddingVertical: 10, marginRight: 10, borderWidth: 1, borderColor: "#1E293B", height: 40 },
