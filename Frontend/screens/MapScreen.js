@@ -1,13 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, Text, ActivityIndicator, TouchableOpacity, StatusBar } from 'react-native';
-import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
+import { View, StyleSheet, Dimensions, Text, ActivityIndicator, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { auth, db } from '../firebaseConfig';
 import { collection, onSnapshot, query } from 'firebase/firestore';
-import { updateUserLocation } from '../services/PostService';
+import { updateUserLocation } from '../services/LocationService';
 import { THEME } from '../constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
+
+let MapView, PROVIDER_GOOGLE, Marker;
+if (Platform.OS !== 'web') {
+  const Maps = require('react-native-maps');
+  MapView = Maps.default;
+  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
+  Marker = Maps.Marker;
+}
 
 // --- HELPER: Calculate distance in KM ---
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -24,7 +30,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 export default function MapScreen({ navigation }) {
   const [users, setUsers] = useState([]);
-  const [myLocation, setMyLocation] = useState(null); // The variable the error was talking about
+  const [myLocation, setMyLocation] = useState(null); 
   const [loading, setLoading] = useState(true);
 
   // Constants for Amity Campus
@@ -43,14 +49,15 @@ export default function MapScreen({ navigation }) {
       setMyLocation(location.coords);
       setLoading(false);
 
-      // Updates your position in the database as you move
-      Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced, distanceInterval: 10 },
-        (loc) => {
-          setMyLocation(loc.coords);
-          updateUserLocation(loc.coords.latitude, loc.coords.longitude);
-        }
-      );
+      if (Platform.OS !== 'web') {
+        Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.Balanced, distanceInterval: 10 },
+          (loc) => {
+            setMyLocation(loc.coords);
+            updateUserLocation(loc.coords.latitude, loc.coords.longitude);
+          }
+        );
+      }
     })();
 
     const q = query(collection(db, "users")); 
@@ -70,43 +77,49 @@ export default function MapScreen({ navigation }) {
     </View>
   );
 
-  // Check if we are within 1km of campus
   const isAtAmity = getDistance(myLocation?.latitude, myLocation?.longitude, AMITY_LAT, AMITY_LON) < 1;
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      <MapView
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        // This centers the map on YOUR house if you are at home
-        region={{
-          latitude: myLocation?.latitude || AMITY_LAT,
-          longitude: myLocation?.longitude || AMITY_LON,
-          latitudeDelta: 0.005,
-          longitudeDelta: 0.005,
-        }}
-        customMapStyle={midnightStyle}
-      >
-        {myLocation && (
-          <Marker coordinate={myLocation}>
-            <View style={styles.myMarker} />
-          </Marker>
-        )}
+      {Platform.OS === 'web' ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111' }}>
+          <Ionicons name="map-outline" size={64} color="#444" style={{marginBottom: 10}} />
+          <Text style={{ color: '#888', fontSize: 16 }}>Interactive Campus Map is not available on Web.</Text>
+          <Text style={{ color: '#555', fontSize: 13, marginTop: 5 }}>Please use the mobile app.</Text>
+        </View>
+      ) : (
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          region={{
+            latitude: myLocation?.latitude || AMITY_LAT,
+            longitude: myLocation?.longitude || AMITY_LON,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          }}
+          customMapStyle={midnightStyle}
+        >
+          {myLocation && (
+            <Marker coordinate={myLocation}>
+              <View style={styles.myMarker} />
+            </Marker>
+          )}
 
-        {users.map(student => (
-          <Marker 
-            key={student.id} 
-            coordinate={{ latitude: student.location.latitude, longitude: student.location.longitude }}
-          >
-            <View style={styles.studentMarker}>
-               <Text style={styles.markerEmoji}>{student.vibes?.[0] || '👋'}</Text>
-            </View>
-            <Text style={styles.markerName}>{student.name?.split(' ')[0]}</Text>
-          </Marker>
-        ))}
-      </MapView>
+          {users.map(student => (
+            <Marker 
+              key={student.id} 
+              coordinate={{ latitude: student.location.latitude, longitude: student.location.longitude }}
+            >
+              <View style={styles.studentMarker}>
+                 <Text style={styles.markerEmoji}>{student.vibes?.[0] || '👋'}</Text>
+              </View>
+              <Text style={styles.markerName}>{student.name?.split(' ')[0]}</Text>
+            </Marker>
+          ))}
+        </MapView>
+      )}
 
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="chevron-back" size={28} color="white" />
