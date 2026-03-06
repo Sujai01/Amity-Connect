@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyApg2l74_Bp4UB2kU9PE4X4RSjHN_PBIp0",
@@ -13,7 +14,15 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig)
-const analytics = getAnalytics(app);
+// const analytics = getAnalytics(app);
+
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
+
 
 export const db = getFirestore(app);
-export const auth = getAuth(app);
+
+
+// NOTE: I removed Analytics entirely. 
+// It causes errors in Expo Go and you don't need it yet!

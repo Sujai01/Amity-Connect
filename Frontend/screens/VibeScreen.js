@@ -1,125 +1,125 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView } from 'react-native';
+import { COLORS, GlobalStyles } from '../constants/Color';
+import { auth, db } from '../firebaseConfig';
+import { doc, updateDoc } from 'firebase/firestore';
 
-//Kapoor and Ansh can add more interests
-
+// 20 Organized Options
 const INTERESTS = [
-  { id: '1', name: 'Coffee Addict', icon: '☕' },
-  { id: '2', name: 'CS Major', icon: '💻' },
+  { id: '1', name: 'CS Major', icon: '💻' },
+  { id: '2', name: 'Coffee Addict', icon: '☕' },
   { id: '3', name: 'Gym Rat', icon: '🏋️' },
-  { id: '4', name: 'Netflix Binge', icon: '📺' },
-  { id: '5', name: 'Late Night Study', icon: '🌙' },
-  { id: '6', name: 'Photography', icon: '📸' },
-  { id: '7', name: 'Anime', icon: '🎎' },
-  { id: '8', name: 'Gamer', icon: '🎮' },
+  { id: '4', name: 'Late Night Coder', icon: '🚀' },
+  { id: '5', name: 'Anime Fan', icon: '🎎' },
+  { id: '6', name: 'Gamer', icon: '🎮' },
+  { id: '7', name: 'Photography', icon: '📸' },
+  { id: '8', name: 'Netflix Binge', icon: '📺' },
+  { id: '9', name: 'Foodie', icon: '🍕' },
+  { id: '10', name: 'Music Lover', icon: '🎧' },
+  { id: '11', name: 'Cricket Fan', icon: '🏏' },
+  { id: '12', name: 'Book Worm', icon: '📚' },
+  { id: '13', name: 'H-Block regular', icon: '🏢' },
+  { id: '14', name: 'Pari Chowk gang', icon: '🚌' },
+  { id: '15', name: 'Hackathon Squad', icon: '🏆' },
+  { id: '16', name: 'Night Owl', icon: '🦉' },
+  { id: '17', name: 'Early Bird', icon: '☀️' },
+  { id: '18', name: 'Designer', icon: '🎨' },
+  { id: '19', name: 'Stock Market', icon: '📈' },
+  { id: '20', name: 'Dorm Life', icon: '🏠' },
 ];
 
 export default function VibeScreen({ onNext }) {
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedNames, setSelectedNames] = useState([]);
 
-  // This function adds or removes an interest when you tap it
-  const toggleInterest = (id) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(item => item !== id));
+  const toggleInterest = (name) => {
+    if (selectedNames.includes(name)) {
+      setSelectedNames(selectedNames.filter(item => item !== name));
     } else {
-      setSelectedIds([...selectedIds, id]);
+      setSelectedNames([...selectedNames, name]);
     }
   };
 
-  const renderItem = ({ item }) => {
-    const isSelected = selectedIds.includes(item.id);
+  const handleFinish = async () => {
+    try {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userRef, { vibes: selectedNames });
+      onNext();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const renderVibe = ({ item }) => {
+    const isSelected = selectedNames.includes(item.name);
     return (
       <TouchableOpacity
-        style={[styles.chip, isSelected && styles.chipSelected]}
-        onPress={() => toggleInterest(item.id)}
+        style={[styles.vibeBox, isSelected && styles.vibeSelected]}
+        onPress={() => toggleInterest(item.name)}
       >
-        <Text style={styles.chipText}>{item.icon} {item.name}</Text>
+        <Text style={styles.vibeEmoji}>{item.icon}</Text>
+        <Text style={styles.vibeText} numberOfLines={1}>{item.name}</Text>
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.card}>
-          <Text style={styles.title}>What's your vibe?</Text>
-          <Text style={styles.subtitle}>Select at least 3 to help us find your people.</Text>
+    <SafeAreaView style={GlobalStyles.container}>
+      <View style={styles.innerContainer}>
+        <Text style={styles.headerTitle}>What's your vibe?</Text>
+        <Text style={styles.headerSub}>Select at least 3 items to customize your map</Text>
+        
+        <FlatList
+          data={INTERESTS}
+          renderItem={renderVibe}
+          keyExtractor={item => item.id}
+          numColumns={2} // THE OCD FIX: Perfect 2-column grid
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.gridPadding}
+        />
 
-          <View style={styles.listContainer}>
-            {INTERESTS.map((item) => {
-              const isSelected = selectedIds.includes(item.id);
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[styles.chip, isSelected && styles.chipSelected]}
-                  onPress={() => toggleInterest(item.id)}
-                >
-                  <Text style={styles.chipText}>{item.icon} {item.name}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
+        <View style={styles.footer}>
           <TouchableOpacity
-            style={[styles.nextButton, selectedIds.length < 3 && styles.disabledButton]}
-            disabled={selectedIds.length < 3}
-            onPress={onNext}
+            style={[GlobalStyles.mainButton, selectedNames.length < 3 && { opacity: 0.3 }]}
+            disabled={selectedNames.length < 3}
+            onPress={handleFinish}
           >
-            <Text style={styles.nextText}>Next Step →</Text>
+            <Text style={GlobalStyles.buttonText}>Enter Amity Connect</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  card: {
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-    alignItems: 'center',
-  },
-  listContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#FFF', marginTop: 40 },
-  subtitle: { fontSize: 16, color: '#94A3B8', marginBottom: 30, marginTop: 10 },
-
-  chip: {
-    backgroundColor: '#1E293B',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
+  innerContainer: { flex: 1, paddingHorizontal: 20 },
+  headerTitle: { color: 'white', fontSize: 32, fontWeight: 'bold', marginTop: 40, textAlign: 'left' },
+  headerSub: { color: COLORS.textSub, fontSize: 16, marginTop: 10, marginBottom: 20 },
+  gridPadding: { paddingBottom: 100 },
+  
+  vibeBox: {
+    flex: 1, // This makes both columns equal width
+    backgroundColor: COLORS.card,
     margin: 8,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  chipSelected: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
-  },
-  chipText: { color: '#FFF', fontWeight: '600' },
-  nextButton: {
-    backgroundColor: '#2563EB',
-    padding: 18,
-    borderRadius: 30,
+    paddingVertical: 20,
+    borderRadius: 15,
     alignItems: 'center',
-    marginBottom: 30,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.chipBorder,
   },
-  disabledButton: { backgroundColor: '#334155', opacity: 0.5 },
-  nextText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  vibeSelected: {
+    borderColor: COLORS.accent,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  vibeEmoji: { fontSize: 24, marginBottom: 8 },
+  vibeText: { color: 'white', fontSize: 14, fontWeight: '500', textAlign: 'center' },
+  
+  footer: { 
+    position: 'absolute', 
+    bottom: 30, 
+    left: 20, 
+    right: 20, 
+    backgroundColor: 'transparent' 
+  }
 });
